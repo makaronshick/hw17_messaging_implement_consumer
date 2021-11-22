@@ -1,0 +1,35 @@
+version: '3'
+services:
+    rabbitmq:
+        restart: always
+        image: rabbitmq:3.9.7-management
+        hostname: rabbitmq
+        # !!! Use docker-compose.override.yml to bind ports
+        volumes:
+            # https://stackoverflow.com/a/62026712
+            # https://hub.docker.com/_/rabbitmq Chapter "Additional Configuration"
+            - ./docker/dev/rabbitmq/definitions.json:/etc/rabbitmq/definitions.json
+        environment:
+            RABBITMQ_SERVER_ADDITIONAL_ERL_ARGS: '-rabbitmq_management load_definitions "/etc/rabbitmq/definitions.json"'
+
+    php:
+        build:
+            context: .
+            dockerfile: docker/dev/php/Dockerfile
+            args:
+                USER_ID: "${DOCKER_COMPOSE__USER_ID:-1000}"
+                GROUP_ID: "${DOCKER_COMPOSE__GROUP_ID:-1000}"
+        stdin_open: true
+        tty: true
+        hostname: hillel-php-advanced-2021
+        volumes:
+            - ./:/app
+            - ./docker/dev/php/php.ini:/usr/local/etc/php/php.ini
+            - ./docker/dev/.bashrc:/home/student/.bashrc
+            # It helps install packages from cache
+            #- composer-cache:/home/student/.composer
+        working_dir: /app
+        user:  ${DOCKER_COMPOSE__USER_ID:-1000}:${DOCKER_COMPOSE__GROUP_ID:-1000}
+
+volumes:
+    composer-cache:
